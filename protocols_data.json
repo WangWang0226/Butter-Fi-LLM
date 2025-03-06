@@ -1,0 +1,164 @@
+[
+    {
+        "protocol": "Lido",
+        "APR": 5.0,
+        "TVL": 21770000000,
+        "category": "Liquid Staking",
+        "lockupPeriod": "no strict lock",
+        "auditStatus": "yes",
+        "feeStructure": "10% staking rewards fee",
+        "liquidity": 2100000000,
+        "support chains": "5",
+        "keyDescription": "Leading liquid staking for Ethereum with daily staking rewards. Highly trusted, multi-chain support.",
+        "otherKeywords": [
+            "ETH",
+            "liquid staking"
+        ]
+    },
+    {
+        "protocol": "AAVE",
+        "APR": 2.5,
+        "TVL": 18217000000,
+        "category": "Lending",
+        "lockupPeriod": "flexible",
+        "auditStatus": "yes",
+        "feeStructure": "varies by market (protocol fee applies)",
+        "liquidity": 1500000000,
+        "support chains": "14",
+        "keyDescription": "Top DeFi lending protocol supporting multiple chains. Earn interest or borrow assets securely.",
+        "otherKeywords": [
+            "lending",
+            "borrowing",
+            "interest"
+        ]
+    },
+    {
+        "protocol": "EigenLayer",
+        "APR": 8.0,
+        "TVL": 10183000000,
+        "category": "Restaking",
+        "lockupPeriod": "variable",
+        "auditStatus": "unknown",
+        "feeStructure": "none",
+        "liquidity": 800000000,
+        "support chains": "1",
+        "keyDescription": "A restaking protocol allowing stakers to compound ETH rewards across multiple services.",
+        "otherKeywords": [
+            "ETH",
+            "restaking"
+        ]
+    },
+    {
+        "protocol": "Ethena",
+        "APR": 5.0,
+        "TVL": 5966000000,
+        "category": "Staking",
+        "lockupPeriod": "unknown",
+        "auditStatus": "yes",
+        "feeStructure": "some performance fee",
+        "liquidity": 5000000,
+        "support chains": "1",
+        "keyDescription": "A stable LSD protocol enabling yield from Ethereum collateral through innovative mechanics.",
+        "otherKeywords": [
+            "LSD",
+            "ETH staking"
+        ]
+    },
+    {
+        "protocol": "ether.fi",
+        "APR": 6.0,
+        "TVL": 5828000000,
+        "category": "Staking",
+        "lockupPeriod": "flexible",
+        "auditStatus": "yes",
+        "feeStructure": "1% performance fee",
+        "liquidity": 5000000,
+        "support chains": "2",
+        "keyDescription": "A non-custodial staking service with operator diversification and on-chain governance.",
+        "otherKeywords": [
+            "ETH",
+            "node operators"
+        ]
+    },
+    {
+        "protocol": "Maker",
+        "APR": 2.0,
+        "TVL": 4905000000,
+        "category": "Lending",
+        "lockupPeriod": "N/A",
+        "auditStatus": "yes",
+        "feeStructure": "stability fees for CDP borrowers",
+        "liquidity": 4000000,
+        "support chains": "1",
+        "keyDescription": "Collateral-based stablecoin generation (DAI) with multiple vault options and governance.",
+        "otherKeywords": [
+            "stablecoin",
+            "CDP"
+        ]
+    },
+    {
+        "protocol": "Babylon",
+        "APR": 7.5,
+        "TVL": 4715000000,
+        "category": "Restaking",
+        "lockupPeriod": "variable",
+        "auditStatus": "unknown",
+        "feeStructure": "unknown",
+        "liquidity": 4000000,
+        "support chains": "1",
+        "keyDescription": "A restaking platform enabling users to stake across multiple strategies through one interface.",
+        "otherKeywords": [
+            "restaking",
+            "multi-strategy"
+        ]
+    },
+    {
+        "protocol": "Pendle",
+        "APR": 10.0,
+        "TVL": 4703000000,
+        "category": "Yield",
+        "lockupPeriod": "flexible",
+        "auditStatus": "yes",
+        "feeStructure": "variable performance fee",
+        "liquidity": 4700000,
+        "support chains": "7",
+        "keyDescription": "A yield-trading protocol that splits yield and principal tokens for flexible DeFi strategies.",
+        "otherKeywords": [
+            "yield trading",
+            "derivatives"
+        ]
+    },
+    {
+        "protocol": "Binance staked ETH",
+        "APR": 4.0,
+        "TVL": 4678000000,
+        "category": "Liquid Staking",
+        "lockupPeriod": "none",
+        "auditStatus": "unknown",
+        "feeStructure": "1% staking fee",
+        "liquidity": 4000000,
+        "support chains": "2",
+        "keyDescription": "Binance's liquid staking solution for Ethereum. Earn staking rewards with exchange-level convenience.",
+        "otherKeywords": [
+            "centralized",
+            "exchange"
+        ]
+    },
+    {
+        "protocol": "Uniswap",
+        "APR": "variable",
+        "TVL": 4225000000,
+        "category": "Dexs",
+        "lockupPeriod": "none",
+        "auditStatus": "yes",
+        "feeStructure": "0.3% swap fee (pool-dependent)",
+        "liquidity": 4200000,
+        "support chains": "31",
+        "keyDescription": "Leading decentralized exchange offering automated liquidity provision and token swapping.",
+        "otherKeywords": [
+            "dex",
+            "amm",
+            "swap"
+        ]
+    }
+]
