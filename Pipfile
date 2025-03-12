@@ -20,6 +20,10 @@ python-docx = "*"
 reportlab = "*"
 markdown = "*"
 weasyprint = "*"
+langgraph = "*"
+ipython = "*"
+fastapi = "*"
+uvicorn = "*"
 
 [dev-packages]
 

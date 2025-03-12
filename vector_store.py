@@ -32,6 +32,9 @@ class ProtocolsVectorStore:
     def add_documents(self, documents):
         self.vector_store.add_documents(documents)
 
+    def similarity_search(self, query, k=10):
+        return self.vector_store.similarity_search(query, k)
+    
     def as_retriever(self):
         return self.vector_store.as_retriever(
             search_type="similarity",
