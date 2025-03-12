@@ -24,6 +24,7 @@ langgraph = "*"
 ipython = "*"
 fastapi = "*"
 uvicorn = "*"
+hypercorn = "*"
 
 [dev-packages]
 
