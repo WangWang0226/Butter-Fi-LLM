@@ -193,6 +193,10 @@ class ResponseBody(BaseModel):
     strategies: list[Strategy]
 
 
+@app.get("/", response_model=str)
+async def root():
+    return "Hello World! This is the root endpoint."
+
 @app.post("/userQuery", response_model=ResponseBody)
 async def userQuery(request: RequestBody):
     # 建立初始對話訊息
