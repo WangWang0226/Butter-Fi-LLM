@@ -10,6 +10,7 @@ from langchain_core.messages import SystemMessage
 from langgraph.prebuilt import ToolNode
 from langgraph.graph import END
 from langgraph.prebuilt import ToolNode, tools_condition
+from collections import defaultdict
 
 
 import re
@@ -28,16 +29,31 @@ llm = init_chat_model("gpt-4o-mini", model_provider="openai")
 
 vector_store = ProtocolsVectorStore()
 
-
 graph_builder = StateGraph(MessagesState)
 
 
 @tool(response_format="content_and_artifact")
-def retrieve(query: str):
+def check_user_position(user_address: str):
+    """
+    Use this tool to check a user's DeFi positions (e.g., staked tokens, balances).
+    Returns (serialized_info, raw_positions).
+    """
+    # ***ToDo***: Implement a function to check user positions based on the user's address
+    sample_positions = [
+        {"token": "USDC", "amount": 1000, "protocol": "AAVE"},
+        {"token": "ETH", "amount": 2, "protocol": "Lido"},
+    ]
+    serialized = "User Positions:\n" + "\n".join(str(pos) for pos in sample_positions)
+    return serialized, sample_positions
+
+
+@tool(response_format="content_and_artifact")
+def retrieve_defi_info(query: str):
     """
     Use this tool to retrieve relevant DeFi investment strategy information
     from the vector store based on the user's query (e.g., desired APR,
-    specific protocol name, or general DeFi strategies).
+    specific protocol name, or general DeFi strategies). 
+    If user wants to stake specific token on a protocol, use this tool to fetch the strategy details.
 
     When called, it performs a similarity search on the underlying vector
     database (vector_store) and returns:
@@ -64,38 +80,92 @@ def retrieve(query: str):
 
 # Step 1: Generate an AIMessage that may include a tool-call to be sent.
 def query_or_respond(state: MessagesState):
-    """Generate tool call for retrieval or respond."""
-    llm_with_tools = llm.bind_tools([retrieve])
+    """Generate tool call for tool-calling or respond."""
+    
+    # Check user address
+    user_context = None
+    for message in state["messages"]:
+        if hasattr(message, "additional_kwargs") and "user_address" in message.additional_kwargs:
+            user_context = f"""
+            Current user address: {message.additional_kwargs['user_address']}
+            When checking user positions, use this address.
+            """
+            break
+    
+    if user_context:
+        state["messages"].insert(0, SystemMessage(content=user_context))
+    
+    llm_with_tools = llm.bind_tools([retrieve_defi_info, check_user_position])
     response = llm_with_tools.invoke(state["messages"])
-    # MessagesState appends messages to state instead of overwriting
+    
+    # If LLM decide not to use tools, format the response as a JSON string and respond directly
+    if response.tool_calls == []:
+        formatted_content = json.dumps({
+            "LLM_response": response.content,
+            "type": "PURE_STRING_RESPONSE",
+            "strategies": []
+        })
+        response.content = formatted_content
+    
     return {"messages": [response]}
 
 
 # Step 2: Execute the retrieval.
-tools = ToolNode([retrieve])
+tools = ToolNode([retrieve_defi_info, check_user_position])
 
 
 # Step 3: Generate a response using the retrieved content.
 def generate(state: MessagesState):
     """Generate answer."""
-    # Get generated ToolMessages
-    recent_tool_messages = []
+    # collect tool messages by tool name
+    tool_messages_by_name = defaultdict(list)
     for message in reversed(state["messages"]):
         if message.type == "tool":
-            recent_tool_messages.append(message)
+            tool_messages_by_name[message.name].append(message)
         else:
             break
-    tool_messages = recent_tool_messages[::-1]
 
-    # Format into prompt
-    docs_content = "\n\n".join(doc.content for doc in tool_messages)
-    system_message_content = (
-        "You are an assistant for question-answering tasks. "
+    # compose system prompts based on different tool messages
+    system_prompts = []
+
+    if "retrieve_defi_info" in tool_messages_by_name:
+        retrieve_contents = "\n\n".join(
+            m.content for m in tool_messages_by_name["retrieve_defi_info"]
+        )
+        system_prompts.append(
+            "You have retrieved some DeFi strategy info which we offer for users to stake or yield:\n"
+            f"{retrieve_contents}\n"
+            """Consider these strategies when answering the user's question.\n 
+            In this scenario, the type would be "EXECUTE_TRANSACTION"
+            """
+        )
+
+    if "check_user_position" in tool_messages_by_name:
+        pos_contents = "\n\n".join(
+            m.content for m in tool_messages_by_name["check_user_position"]
+        )
+        system_prompts.append(
+            "You have fetched the user's position info:\n"
+            f"{pos_contents}\n"
+            """Consider these positions if the user is asking about their existing staked tokens.\n
+            In this scenario, the type would be "PURE_STRING_RESPONSE"
+            """
+        )
+
+    # Combine system prompts
+    combined_system_prompt = (
+        "You are an assistant for DeFi yeild & staking related question-answering tasks.\n\n"
+        + "\n".join(system_prompts)
+    )
+    combined_system_prompt += (
+        "\n"
+        "Now provide a response accordingly. If you don't know the answer, say that you "
+        "don't know. Use three sentences maximum and keep the answer concise.\n"
         """
         I want your answer strictly follow this JSON format:
-            1. LLM_response: A short description text with recommended options and ask for the user's choice.
-            2. type: always be "EXECUTE_TRANSACTION"
-            3. A list of strategies, each with the following fields:
+            1. LLM_response: A concise answer for the user's question about yields or protocols. This is the response directly showing to the user.\n"
+            2. type: "EXECUTE_TRANSACTION" or "PURE_STRING_RESPONSE" based on the information above, letting the system know that the response offers optional transactions to be executed or not.\n"
+            3. strategies: A list of strategies (Can be empty if not applicable), each with the following fields:
                 - label: A short name for the strategy.
                 - description: A brief description of the strategy.
                 - strategyID: The unique ID for the strategy.
@@ -104,9 +174,9 @@ def generate(state: MessagesState):
             For example:
             ---
             {{
-                "LLM_response": "Here are some staking protocols with at least 5% APR for you to consider: 
-                    1. Earn 6% APR by staking in ether.fi, a non-custodial staking service.
-                    2. Earn 5% APR with Ethena, a stable LSD protocol for Ethereum collateral.",
+                "LLM_response": "Here are some staking protocols with at least 5% APR for you to consider: \n
+                    1. Earn 6% APR by staking in ether.fi, a non-custodial staking service.\n
+                    2. Earn 5% APR with Ethena, a stable LSD protocol for Ethereum collateral.\n",
                 "type": "EXECUTE_TRANSACTION",
                 "strategies": [
                         {
@@ -125,20 +195,15 @@ def generate(state: MessagesState):
             }}
             ---
         """
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know. Use three sentences maximum and keep the "
-        "answer concise."
-        "\n\n"
-        f"{docs_content}"
     )
+
     conversation_messages = [
         message
         for message in state["messages"]
         if message.type in ("human", "system")
         or (message.type == "ai" and not message.tool_calls)
     ]
-    prompt = [SystemMessage(system_message_content)] + conversation_messages
+    prompt = [SystemMessage(combined_system_prompt)] + conversation_messages
 
     # Run
     response = llm.invoke(prompt)
@@ -164,20 +229,17 @@ memory = MemorySaver()
 
 graph = graph_builder.compile(checkpointer=memory)
 
-from IPython.display import Image, display
-
-display(Image(graph.get_graph().draw_mermaid_png()))
-
 # Specify an ID for the thread
 config = {"configurable": {"thread_id": "abc123"}}
 
-# --- 定義 FastAPI 後端 ---
+# --- FastAPI Backend ---
 app = FastAPI()
 
 
-# Request 與 Response 的資料模型
+# Data type of Request and Response
 class RequestBody(BaseModel):
     userInput: str
+    userAddress: str = "0x0000000000000000000000000000000000000000"  # 預設地址
 
 
 class Strategy(BaseModel):
@@ -199,11 +261,15 @@ async def root():
 
 @app.post("/userQuery", response_model=ResponseBody)
 async def userQuery(request: RequestBody):
-    # 建立初始對話訊息
-    user_message = {"role": "user", "content": request.userInput}
+    # init user message
+    user_message = {
+        "role": "user", 
+        "content": request.userInput,
+        "additional_kwargs": {"user_address": request.userAddress}
+    }
     final_message = None
     
-    # 執行 graph.stream 並獲取最終回應
+    # Run the graph
     for step in graph.stream(
         {"messages": [user_message]},
         stream_mode="values",
@@ -215,7 +281,7 @@ async def userQuery(request: RequestBody):
         raise HTTPException(status_code=500, detail="No response from LLM.")
 
     try:
-        # 嘗試解析 LLM 返回的 JSON 字符串
+        # Parse the JSON response
         response_dict = json.loads(final_message.content)
         return ResponseBody(**response_dict)
     except json.JSONDecodeError as e:
@@ -225,9 +291,8 @@ async def userQuery(request: RequestBody):
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-    
     # input_message = "Recommend some staking protocols for me, at least 5% APR."
-
+    # # input_message = "hi, how are you?"
     # for step in graph.stream(
     #     {"messages": [{"role": "user", "content": input_message}]},
     #     stream_mode="values",
@@ -237,10 +302,4 @@ if __name__ == "__main__":
         
 
     # input_message = "what I just ask you?"
-
-    # for step in graph.stream(
-    #     {"messages": [{"role": "user", "content": input_message}]},
-    #     stream_mode="values",
-    #     config=config,
-    # ):
-    #     step["messages"][-1].pretty_print()
+    # for step in graph.stream(    #     {"messages": [{"role": "user", "content": input_message}]},    #     stream_mode="values",    #     config=config,    # ):    #     step["messages"][-1].pretty_print()
