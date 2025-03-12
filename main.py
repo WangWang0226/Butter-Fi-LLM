@@ -1,6 +1,5 @@
 import getpass
 import os
-from langchain_openai import OpenAIEmbeddings
 from vector_store import ProtocolsVectorStore
 
 from langgraph.graph import MessagesState, StateGraph
@@ -11,13 +10,14 @@ from langgraph.prebuilt import ToolNode
 from langgraph.graph import END
 from langgraph.prebuilt import ToolNode, tools_condition
 from collections import defaultdict
-
+from langgraph.checkpoint.memory import MemorySaver
 
 import re
 import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uvicorn
+from check_user_position import query_all_positions
 
 
 if not os.environ.get("OPENAI_API_KEY"):
@@ -35,16 +35,12 @@ graph_builder = StateGraph(MessagesState)
 @tool(response_format="content_and_artifact")
 def check_user_position(user_address: str):
     """
-    Use this tool to check a user's DeFi positions (e.g., staked tokens, balances).
+    Use this tool to check a user's DeFi positions (e.g., staked tokens, balances, rewards).
     Returns (serialized_info, raw_positions).
     """
-    # ***ToDo***: Implement a function to check user positions based on the user's address
-    sample_positions = [
-        {"token": "USDC", "amount": 1000, "protocol": "AAVE"},
-        {"token": "ETH", "amount": 2, "protocol": "Lido"},
-    ]
-    serialized = "User Positions:\n" + "\n".join(str(pos) for pos in sample_positions)
-    return serialized, sample_positions
+    user_positions = query_all_positions(user_address)
+    serialized = "User Positions:\n" + "\n".join(str(pos) for pos in user_positions)
+    return serialized, user_positions
 
 
 @tool(response_format="content_and_artifact")
@@ -88,7 +84,8 @@ def query_or_respond(state: MessagesState):
         if hasattr(message, "additional_kwargs") and "user_address" in message.additional_kwargs:
             user_context = f"""
             Current user address: {message.additional_kwargs['user_address']}
-            When checking user positions, use this address.
+            IMPORTANT: Always use check_user_position tool when the question is about user's positions, rewards, or tokens.
+            Don't rely on previous responses, always get fresh data.
             """
             break
     
@@ -112,7 +109,6 @@ def query_or_respond(state: MessagesState):
 
 # Step 2: Execute the retrieval.
 tools = ToolNode([retrieve_defi_info, check_user_position])
-
 
 # Step 3: Generate a response using the retrieved content.
 def generate(state: MessagesState):
@@ -147,7 +143,7 @@ def generate(state: MessagesState):
         system_prompts.append(
             "You have fetched the user's position info:\n"
             f"{pos_contents}\n"
-            """Consider these positions if the user is asking about their existing staked tokens.\n
+            """Consider these positions if the user is asking about their existing staked tokens. Summarize the user's positions concisely\n
             In this scenario, the type would be "PURE_STRING_RESPONSE"
             """
         )
@@ -223,11 +219,7 @@ graph_builder.add_conditional_edges(
 graph_builder.add_edge("tools", "generate")
 graph_builder.add_edge("generate", END)
 
-from langgraph.checkpoint.memory import MemorySaver
-
-memory = MemorySaver()
-
-graph = graph_builder.compile(checkpointer=memory)
+graph = graph_builder.compile()
 
 # Specify an ID for the thread
 config = {"configurable": {"thread_id": "abc123"}}
