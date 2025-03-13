@@ -35,7 +35,7 @@ graph_builder = StateGraph(MessagesState)
 @tool(response_format="content_and_artifact")
 def check_user_position(user_address: str):
     """
-    Use this tool to check a user's DeFi positions (e.g., staked tokens, balances, rewards).
+    Use this tool if a user wants to check or withdraw his/her DeFi positions (e.g., staked tokens, balances, rewards).
     Returns (serialized_info, raw_positions).
     """
     user_positions = query_all_positions(user_address)
@@ -141,11 +141,11 @@ def generate(state: MessagesState):
             m.content for m in tool_messages_by_name["check_user_position"]
         )
         system_prompts.append(
-            "You have fetched the user's position info:\n"
+            "You have retrieved the user's staked position details:\n"
             f"{pos_contents}\n"
-            """Consider these positions if the user is asking about their existing staked tokens. Summarize the user's positions concisely\n
-            In this scenario, the type would be "PURE_STRING_RESPONSE"
-            """
+            "When the user inquires about their staked tokens, summarize their positions concisely.\n"
+            "- If the user only wants to check their positions, set the response type to 'PURE_STRING_RESPONSE'.\n"
+            "- If the user intends to withdraw, set the response type to 'WITHDRAW_POSITION' and provide all the strategies where the user has deposited funds."
         )
 
     # Combine system prompts
@@ -160,7 +160,7 @@ def generate(state: MessagesState):
         """
         I want your answer strictly follow this JSON format:
             1. LLM_response: A concise answer for the user's question about yields or protocols. This is the response directly showing to the user.\n"
-            2. type: "EXECUTE_TRANSACTION" or "PURE_STRING_RESPONSE" based on the information above, letting the system know that the response offers optional transactions to be executed or not.\n"
+            2. type: "EXECUTE_TRANSACTION" or "PURE_STRING_RESPONSE" or "WITHDRAW_POSITION" based on the information above.\n"
             3. strategies: A list of strategies (Can be empty if not applicable), each with the following fields:
                 - label: A short name for the strategy.
                 - description: A brief description of the strategy.
