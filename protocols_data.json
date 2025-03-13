@@ -12,9 +12,9 @@
         "feeStructure": "10% staking rewards fee",
         "liquidity": 2100000000,
         "support chains": "5",
-        "keyDescription": "Leading liquid staking for Ethereum with daily staking rewards. Highly trusted, multi-chain support.",
+        "keyDescription": "Leading liquid staking for Monad with daily staking rewards. Highly trusted, multi-chain support.",
         "otherKeywords": [
-            "ETH",
+            "WMOD",
             "liquid staking"
         ]
     },
@@ -51,9 +51,9 @@
         "feeStructure": "none",
         "liquidity": 800000000,
         "support chains": "1",
-        "keyDescription": "A restaking protocol allowing stakers to compound ETH rewards across multiple services.",
+        "keyDescription": "A restaking protocol allowing stakers to compound MON rewards across multiple services.",
         "otherKeywords": [
-            "ETH",
+            "WMOD",
             "restaking"
         ]
     },
@@ -70,10 +70,10 @@
         "feeStructure": "some performance fee",
         "liquidity": 5000000,
         "support chains": "1",
-        "keyDescription": "A stable LSD protocol enabling yield from Ethereum collateral through innovative mechanics.",
+        "keyDescription": "A stable LSD protocol enabling yield from Monad collateral through innovative mechanics.",
         "otherKeywords": [
             "LSD",
-            "ETH staking"
+            "WMOD staking"
         ]
     }
 ]

@@ -1,11 +1,17 @@
 from web3 import Web3
 from eth_account import Account
 import json
+import os
+import getpass
 
-RPC_URL = "https://monad-testnet.g.alchemy.com/v2/c-AQewOSQs5I0eHIMgX_94jD90XucnjU"
+
+QUICKNODE_API_KEY = os.environ.get("QUICKNODE_API_KEY")
+
+RPC_URL = "https://testnet-rpc2.monad.xyz/" + QUICKNODE_API_KEY
+
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
 
-AGGREGATOR_CONTRACT_ADDRESS = "0x12C61b22b397a6D72AD85f699fAf2D75f50D556C"
+AGGREGATOR_CONTRACT_ADDRESS = os.environ.get("AGGREGATOR_CONTRACT_ADDRESS")
 
 CONTRACT_ABI = [
     {

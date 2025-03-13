@@ -145,7 +145,7 @@ def generate(state: MessagesState):
             f"{pos_contents}\n"
             "When the user inquires about their staked tokens, summarize their positions concisely.\n"
             "- If the user only wants to check their positions, set the response type to 'PURE_STRING_RESPONSE'.\n"
-            "- If the user intends to withdraw, set the response type to 'WITHDRAW_POSITION' and provide all the strategies where the user has deposited funds."
+            "- If the user intends to withdraw, set the response type to 'WITHDRAW_POSITION' and provide only the strategies where the user has deposited funds."
         )
 
     # Combine system prompts
@@ -163,12 +163,11 @@ def generate(state: MessagesState):
             2. type: "EXECUTE_TRANSACTION" or "PURE_STRING_RESPONSE" or "WITHDRAW_POSITION" based on the information above.\n"
             3. strategies: A list of strategies (Can be empty if not applicable), each with the following fields:
                 - label: A short name for the strategy.
-                - description: A brief description of the strategy.
+                - description: "A brief description of the strategy. If 'type' is 'EXECUTE_TRANSACTION', provide a recommended action for the user. If 'type' is 'WITHDRAW_POSITION', provide a specific action for withdrawing the user's positions with their balances.",
                 - strategyID: The unique ID for the strategy.
                 - stakeToken: The token address for staking 
 
             For example:
-            ---
             {{
                 "LLM_response": "Here are some staking protocols with at least 5% APR for you to consider: \n
                     1. Earn 6% APR by staking in ether.fi, a non-custodial staking service.\n
@@ -189,7 +188,6 @@ def generate(state: MessagesState):
                         }
                 ]
             }}
-            ---
         """
     )
 
@@ -284,14 +282,18 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
     # input_message = "Recommend some staking protocols for me, at least 5% APR."
-    # # input_message = "hi, how are you?"
+    # final_message = None
     # for step in graph.stream(
     #     {"messages": [{"role": "user", "content": input_message}]},
     #     stream_mode="values",
     #     config=config,
     # ):
-    #     step["messages"][-1].pretty_print()
-        
+    #     # step["messages"][-1].pretty_print()
+    #     final_message = step["messages"][-1]
+
+    # print("*****:", final_message.content)
+    # response_dict = json.loads(final_message.content)
+    # print(response_dict)
 
     # input_message = "what I just ask you?"
     # for step in graph.stream(    #     {"messages": [{"role": "user", "content": input_message}]},    #     stream_mode="values",    #     config=config,    # ):    #     step["messages"][-1].pretty_print()
