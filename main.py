@@ -35,7 +35,7 @@ graph_builder = StateGraph(MessagesState)
 @tool(response_format="content_and_artifact")
 def check_user_position(user_address: str):
     """
-    Use this tool if a user wants to check or withdraw his/her DeFi positions (e.g., staked tokens, balances, rewards).
+    Use this tool if a user wants to check or withdraw his/her DeFi positions, or claim his/her reward(e.g., staked tokens, balances, rewards).
     Returns (serialized_info, raw_positions).
     """
     user_positions = query_all_positions(user_address)
@@ -141,11 +141,12 @@ def generate(state: MessagesState):
             m.content for m in tool_messages_by_name["check_user_position"]
         )
         system_prompts.append(
-            "You have retrieved the user's staked position details:\n"
+            "You have retrieved the user's staked position and pending reward details:\n"
             f"{pos_contents}\n"
             "When the user inquires about their staked tokens, summarize their positions concisely.\n"
             "- If the user only wants to check their positions, set the response type to 'PURE_STRING_RESPONSE'.\n"
             "- If the user intends to withdraw, set the response type to 'WITHDRAW_POSITION' and provide only the strategies where the user has deposited funds."
+            "- If the user intends to claim rewards, set the response type to 'CLAIM_REWARD' and provide only the strategies where the user has pending rewards."
         )
 
     # Combine system prompts
@@ -163,9 +164,9 @@ def generate(state: MessagesState):
             2. type: "EXECUTE_TRANSACTION" or "PURE_STRING_RESPONSE" or "WITHDRAW_POSITION" based on the information above.\n"
             3. strategies: A list of strategies (Can be empty if not applicable), each with the following fields:
                 - label: A short name for the strategy.
-                - description: "A brief description of the strategy. If 'type' is 'EXECUTE_TRANSACTION', provide a recommended action for the user. If 'type' is 'WITHDRAW_POSITION', provide a specific action for withdrawing the user's positions with their balances.",
+                - description: "A brief strategy description. If the type is EXECUTE_TRANSACTION, provide a recommended action for the user. If it is WITHDRAW_POSITION, provide withdrawal action along with the user's balances. If it is CLAIM_REWARD, specify the action for claiming rewards, including the pending reward balances.
                 - strategyID: The unique ID for the strategy.
-                - stakeToken: The token address for staking 
+                - stakeToken: The token address for staking.
 
             For example:
             {{
